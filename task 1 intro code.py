@@ -1,0 +1,99 @@
+
+# Task 1: Hinger Game State
+
+class State:
+
+    def __init__(self, grid):
+        """Initialise a Hinger game state."""
+        self.grid = [row[:] for row in grid]
+
+    def __str__(self):
+        """Return the board as a readable matrix."""
+        result = ""  
+        for row in self.grid:
+            result += " ".join(map(str, row)) + "\n"
+
+        return result.rstrip()          
+        pass
+
+    def move(self, letter):
+        """Remove one counter if the move is legal."""
+       
+        if letter not in "ABCDEFGHIJKLMNOPQRSTUVWXY":
+       
+            return False
+    
+        # 2. Convert the letter into a grid position
+        # 3. Check that the cell contains a counter
+        # 4. Remove one counter
+        pass
+
+    def successors(self):
+        """Generate every state reachable in one move."""
+        # 1. Examine every cell
+        # 2. Identify active cells
+        # 3. Copy the current board
+        # 4. Remove one counter from the copy
+        # 5. Yield a new State object
+        yield from ()
+
+    def getNeighbours(self, row, col):
+        """Return valid neighbouring positions."""
+        neighbours = []
+
+        # Check all eight surrounding positions
+        # Exclude positions outside the board
+
+        return neighbours
+
+    def numRegions(self):
+        """Count connected regions of active cells."""
+        visited = set()
+        regions = 0
+
+        # 1. Iterate through the board
+        # 2. Find an active cell not in visited
+        # 3. Increase regions by one
+        # 4. Explore connected active cells using DFS
+
+        return regions
+
+    def numHingers(self):
+        """Count cells whose removal increases regions."""
+        count = 0
+
+        # 1. Calculate the original number of regions
+        # 2. Find cells containing exactly one counter
+        # 3. Remove each candidate in a copied state
+        # 4. Compare the region counts
+        # 5. Count cells that increase the regions
+
+        return count
+
+
+def tester():
+    """Test the Hinger State class."""
+
+    # Example board for initial testing
+    board = [
+        [1, 1, 0, 0, 1],
+        [1, 1, 0, 0, 0],
+        [0, 0, 1, 1, 1],
+        [0, 0, 0, 1, 1],
+        [0, 0, 0, 0, 1]
+    ]
+
+    state = State(board)
+
+    print("Initial board:")
+    print(state)
+
+    print("Number of regions:")
+    print(state.numRegions())
+
+    print("Number of hingers:")
+    print(state.numHingers())
+
+
+if __name__ == "__main__":
+    tester()

@@ -192,134 +192,134 @@ class Agent:
 
             return best_score
         
-def mcts_move(self, state, iterations=1000, seed=None):
-    """Choose a move using Monte Carlo Tree Search."""
-    if iterations < 1:
-        raise ValueError("Iterations must be at least 1")
+    def mcts_move(self, board, iterations=1000, seed=None):
+        """Choose a move using Monte Carlo Tree Search."""
+        if iterations < 1:
+            raise ValueError("Iterations must be at least 1")
 
-    rng = random.Random(seed)
+        rng = random.Random(seed)
 
-    # Each node stores a board and its search statistics.
-    def make_node(board, maximizing, letter=None):
-        return {
-            "state": board,
-            "maximizing": maximizing,
-            "letter": letter,
-            "untried": self.get_valid_moves(board),
-            "children": [],
-            "visits": 0,
-            "total_reward": 0.0
-        }
+        # Each node stores a board and its search statistics.
+        def make_node(board, maximizing, letter=None):
+            return {
+                "state": board,
+                "maximizing": maximizing,
+                "letter": letter,
+                "untried": self.get_valid_moves(board),
+                "children": [],
+                "visits": 0,
+                "total_reward": 0.0
+                }
 
-    root = make_node(state.State(state.grid), True)
+        root = make_node(state.State(board.grid), True)
 
-    if not root["untried"]:
-        return None
+        if not root["untried"]:
+            return None
 
-    # Keep the reward between -1 and 1.
-    # Each remaining move changes the score by at most 100.
-    reward_scale = 100 * len(root["untried"])
+        # Keep the reward between -1 and 1.
+        # Each remaining move changes the score by at most 100.
+        reward_scale = 100 * len(root["untried"])
 
-    for iteration in range(iterations):
-        node = root
-        path = [node]
-        score_difference = 0
+        for iteration in range(iterations):
+            node = root
+            path = [node]
+            score_difference = 0
 
-        # 1. SELECTION
-        # Follow existing branches until expansion is possible.
-        while not node["untried"] and node["children"]:
+            # 1. SELECTION
+            # Follow existing branches until expansion is possible.
+            while not node["untried"] and node["children"]:
+                
+                def uct(child):
+                    average = (
+                        child["total_reward"] / child["visits"]
+                        )
 
-            def uct(child):
-                average = (
-                    child["total_reward"] / child["visits"]
-                )
+                    # Opponent turns favour lower scores for us.
+                    if not node["maximizing"]:
+                        average = -average
 
-                # Opponent turns favour lower scores for us.
-                if not node["maximizing"]:
-                    average = -average
+                    exploration = math.sqrt(
+                        2 * math.log(node["visits"])
+                        / child["visits"]
+                        )
 
-                exploration = math.sqrt(
-                    2 * math.log(node["visits"])
-                    / child["visits"]
-                )
+                    return average + exploration
 
-                return average + exploration
+                child = max(node["children"], key=uct)
 
-            child = max(node["children"], key=uct)
+                new_state, points = self.simulate_move(
+                    node["state"], child["letter"]
+                    )
 
-            new_state, points = self.simulate_move(
-                node["state"], child["letter"]
-            )
+                if node["maximizing"]:
+                    score_difference += points
+                else:
+                    score_difference -= points
 
-            if node["maximizing"]:
-                score_difference += points
-            else:
-                score_difference -= points
+                node = child
+                path.append(node)
 
-            node = child
-            path.append(node)
+            # 2. EXPANSION
+            # Add one previously unexplored move.
+            if node["untried"]:
+                letter = rng.choice(node["untried"])
+                node["untried"].remove(letter)
 
-        # 2. EXPANSION
-        # Add one previously unexplored move.
-        if node["untried"]:
-            letter = rng.choice(node["untried"])
-            node["untried"].remove(letter)
+                new_state, points = self.simulate_move(
+                    node["state"], letter
+                    )
 
-            new_state, points = self.simulate_move(
-                node["state"], letter
-            )
+                if node["maximizing"]:
+                    score_difference += points
+                else:
+                    score_difference -= points
 
-            if node["maximizing"]:
-                score_difference += points
-            else:
-                score_difference -= points
+                child = make_node(
+                    new_state,
+                    not node["maximizing"],
+                    letter
+                    )
 
-            child = make_node(
-                new_state,
-                not node["maximizing"],
-                letter
-            )
+                node["children"].append(child)
+                node = child
+                path.append(node)
 
-            node["children"].append(child)
-            node = child
-            path.append(node)
-
-        # 3. SIMULATION
-        # Play random moves until the board is empty.
-        rollout_state = state.State(node["state"].grid)
-        maximizing = node["maximizing"]
-        moves = self.get_valid_moves(rollout_state)
-
-        while moves:
-            letter = rng.choice(moves)
-
-            rollout_state, points = self.simulate_move(
-                rollout_state, letter
-            )
-
-            if maximizing:
-                score_difference += points
-            else:
-                score_difference -= points
-
-            maximizing = not maximizing
+            # 3. SIMULATION
+            # Play random moves until the board is empty.
+            rollout_state = state.State(node["state"].grid)
+            maximizing = node["maximizing"]
             moves = self.get_valid_moves(rollout_state)
 
-        # 4. BACKPROPAGATION
-        # Update every node visited during this iteration.
-        reward = score_difference / reward_scale
+            while moves:
+                letter = rng.choice(moves)
 
-        for visited_node in path:
-            visited_node["visits"] += 1
-            visited_node["total_reward"] += reward
+                rollout_state, points = self.simulate_move(
+                    rollout_state, letter
+                    )
 
-    # Choose the move explored most often.
-    best_child = max(
-        root["children"],
-        key=lambda child: child["visits"]
-    )
+                if maximizing:
+                    score_difference += points
+                else:
+                    score_difference -= points
 
-    return best_child["letter"]
+                maximizing = not maximizing
+                moves = self.get_valid_moves(rollout_state)
+
+            # 4. BACKPROPAGATION
+            # Update every node visited during this iteration.
+            reward = score_difference / reward_scale
+
+            for visited_node in path:
+                visited_node["visits"] += 1
+                visited_node["total_reward"] += reward
+
+        # Choose the move explored most often.
+        best_child = max(
+            root["children"],
+            key=lambda child: child["visits"]
+            )
+
+        return best_child["letter"]
 
 def tester():
     """Demonstrate and validate the agent on small, known boards."""

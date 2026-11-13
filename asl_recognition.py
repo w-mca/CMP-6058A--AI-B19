@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Nov 13 16:55:25 2026
-
-@author: adamb
-"""
+# recognition for the asl sign language photos of hand
+# Group number: B19
+# Student IDs: 100437354, Churchill, Adam
+# Student IDs: 100463731, Emeka-Ugwuadu, Sean
+# Student IDs: 100436949, McAlister, William
 
 
 import cv2

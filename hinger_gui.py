@@ -124,6 +124,8 @@ class HingerGUI:
         """Run the main GUI loop."""
 
         while self.running:
+            
+            self.game.update_timer()
 
             # Handle events
             for event in pygame.event.get():

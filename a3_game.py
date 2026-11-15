@@ -24,7 +24,7 @@ class HingerGame:
         
         self.scores = [100, 100]
         
-        self.turn_time_limit = 60.0
+        self.turn_time_limit = 2.0 #20
         self.turn_started_at = None
         self.total_time_used = [0.0, 0.0]
         
@@ -121,22 +121,86 @@ class HingerGame:
             return
 
         if self.get_remaining_time() <= 0:
-            self.finish_turn()
-            # Opponent wins
-            winner = 1 - self.current_player
-            self.end_game(winner)
+            self.next_turn()
 
-        def end_game(self, winner=None):
+    def end_game(self, winner=None):
             """Finish the game and determine the winner."""
             # Record the winner or draw.
+            self.playing = False
+            self.game_over = True
+            self.winner = winner
+            self.turn_started_at = None
 
-        def handle_move(self, letter):
-            """Validate and execute a player's move."""
-            # Update state, score and move history.
+    def handle_move(self, letter):
 
-        def next_turn(self):
+        letter = letter.upper()
+
+        # Check whether the cell exists
+        if letter < "A" or letter > "Y":
+            print("Invalid move: Cell does not exist")
+            self.end_game(1 - self.current_player)
+            return
+
+        # Convert letter to board coordinates
+        index = ord(letter) - ord("A")
+
+        row = index // 5
+        col = index % 5
+
+        # Check whether the cell is active
+        if self.board.grid[row][col] == 0:
+            print("Invalid move: Cell is empty")
+            self.end_game(1 - self.current_player)
+            return
+
+        print(f"Valid move: {letter} at row {row}, column {col}")
+
+        # Execute the move here
+        new_state, points = self.board.simulate_move(self.board, letter)
+        # Update board and score
+        self.board = new_state
+        self.scores[self.current_player] += points
+        
+        # Animate gain wiht GUI
+        
+        # Determine the current player's name
+        player_name = None
+        if self.current_player == 0:
+            player_name = "Human" if self.agentA is None else "Computer A"
+        else:
+            player_name = "Human" if self.agentB is None else (
+                "Computer" if self.versus else "Computer B"
+            )
+            # Record player name and move
+            self.move_history.append((player_name, letter))
+        print(f"Player {player_name} played {letter}")
+        print(f"Points earned: {points}")
+        
+        # Check whether all counters have been removed
+        if all(cell == 0 for row in self.board.grid for cell in row):
+
+            if self.scores[0] > self.scores[1]:
+                winner = 0
+            elif self.scores[1] > self.scores[0]:
+                winner = 1
+            else:
+                winner = None
+
+            self.finish_turn()
+            self.end_game(winner)
+            return
+
+        # End current player's turn and start opponent's turn
+        self.next_turn()
+        
+    def next_turn(self):
             """Switch between Player A and Player B."""
+            # Record the current player's time
+            self.finish_turn()
+            # Switch player
             self.current_player = 1 - self.current_player
+            # Start the new player's timer
+            self.start_turn()
 
 def start():
     game = HingerGame()

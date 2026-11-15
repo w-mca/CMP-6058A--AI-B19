@@ -13,6 +13,7 @@ from scene_manager import Scene, SceneManager
 from home_scene_gui import HomeSceneGUI
 from numplayers_scene_gui import NumPlayersSceneGUI
 from strategy_scene_gui import StrategySceneGUI
+from game_scene_gui import GameSceneGUI
 
 # GUI Colours
 BACKGROUND = (17, 24, 39)
@@ -33,6 +34,7 @@ class HingerGUI:
         self.home_gui = HomeSceneGUI(self)
         self.numplayers_gui = NumPlayersSceneGUI(self)
         self.strategy_gui = StrategySceneGUI(self)
+        self.game_gui = GameSceneGUI(self)
        # self.state = state
 
         # Initial window dimensions
@@ -128,6 +130,7 @@ class HingerGUI:
 
                 if event.type == pygame.QUIT:
                     self.running = False
+                    break
 
                 elif event.type == pygame.VIDEORESIZE:
                     self.width, self.height = event.size
@@ -144,6 +147,9 @@ class HingerGUI:
 
                     case Scene.STRATEGY:
                         self.strategy_gui.handle_event(event)
+                        
+                    case Scene.GAME:
+                        self.game_gui.handle_event(event)
 
             # Clear screen
             self.screen.fill(BACKGROUND)
@@ -161,7 +167,7 @@ class HingerGUI:
                     self.strategy_gui.draw()
 
                 case Scene.GAME:
-                    pass
+                    self.game_gui.draw()
 
                 case Scene.SETTINGS:
                     pass

@@ -158,5 +158,5 @@ class StrategySceneGUI:
         # Store strategies in the game controller.
         self.gui.game.strategyA = self.agent_a_strategy
         self.gui.game.strategyB = self.agent_b_strategy
-
-        self.gui.scene.change_scene(Scene.GAME)
+        
+        self.gui.game.begin()

@@ -24,7 +24,7 @@ class HingerGame:
         
         self.scores = [100, 100]
         
-        self.turn_time_limit = 2.0 #20
+        self.turn_time_limit = 10.0 #20
         self.turn_started_at = None
         self.total_time_used = [0.0, 0.0]
         
@@ -37,6 +37,7 @@ class HingerGame:
         self.move_count = 0
         self.move_history = []
         self.last_move = None
+        
         
         self.ui = HingerGUI(self)
        
@@ -150,13 +151,22 @@ class HingerGame:
         # Check whether the cell is active
         if self.board.grid[row][col] == 0:
             print("Invalid move: Cell is empty")
+            self.ui.game_gui.flash_text(
+                "INVALID MOVE",
+                self.ui.game_gui.invalid_move_flash_colour
+            ) 
             self.end_game(1 - self.current_player)
             return
 
         print(f"Valid move: {letter} at row {row}, column {col}")
 
         # Execute the move here
-        new_state, points = self.board.simulate_move(self.board, letter)
+        new_state, points, was_hinger = self.board.simulate_move(self.board, letter)
+        if was_hinger:
+            self.ui.game_gui.flash_text(
+                "HINGER!",
+                self.ui.game_gui.hinger_flash_colour
+            )      
         # Update board and score
         self.board = new_state
         self.scores[self.current_player] += points
@@ -171,11 +181,11 @@ class HingerGame:
             player_name = "Human" if self.agentB is None else (
                 "Computer" if self.versus else "Computer B"
             )
-            # Record player name and move
-            self.move_history.append((player_name, letter))
+        # Record player name and move
+        self.move_history.append((player_name, letter, was_hinger))
         print(f"Player {player_name} played {letter}")
         print(f"Points earned: {points}")
-        
+
         # Check whether all counters have been removed
         if all(cell == 0 for row in self.board.grid for cell in row):
 

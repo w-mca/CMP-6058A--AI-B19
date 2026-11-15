@@ -35,7 +35,6 @@ class HingerGUI:
         self.numplayers_gui = NumPlayersSceneGUI(self)
         self.strategy_gui = StrategySceneGUI(self)
         self.game_gui = GameSceneGUI(self)
-       # self.state = state
 
         # Initial window dimensions
         self.width = 700
@@ -152,7 +151,11 @@ class HingerGUI:
                         
                     case Scene.GAME:
                         self.game_gui.handle_event(event)
-
+            
+            # Exit immediately when the window is closed
+            if not self.running:
+                break
+            
             # Clear screen
             self.screen.fill(BACKGROUND)
 

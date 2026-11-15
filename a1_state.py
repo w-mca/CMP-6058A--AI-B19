@@ -195,7 +195,7 @@ class State:
         bonus = 100 if was_hinger else 0
         points = bonus - cost
 
-        return new_state, points
+        return new_state, points, was_hinger
 
                     
 def tester():

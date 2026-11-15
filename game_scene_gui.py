@@ -19,6 +19,15 @@ class GameSceneGUI:
     def __init__(self, gui):
         self.gui = gui
         self.cell_rects = {}
+        
+        # Text flash anim
+        self.hinger_flash_colour = (255, 215, 0)
+        self.invalid_move_flash_colour = (239, 68, 68)
+        
+        self.flash_message = None
+        self.flash_color = (255, 255, 255)
+        self.flash_start = 0
+        self.flash_duration = 1500
 
     def draw(self):
         game = self.gui.game
@@ -160,7 +169,7 @@ class GameSceneGUI:
                         screen, colour, rect, border_radius=8
                     )
 
-                    letter = str(game.board.grid[row][col])
+                    letter = chr(ord("A") + row * 5 + col)
 
                     label = info_font.render(letter, True, self.TEXT)
                     screen.blit(label, label.get_rect(center=rect.center))
@@ -222,7 +231,42 @@ class GameSceneGUI:
                 button_text,
                 button_text.get_rect(center=self.play_again_rect.center)
             )
+            
+        if self.flash_message is not None:
+            elapsed = pygame.time.get_ticks() - self.flash_start
 
+            if elapsed >= self.flash_duration:
+                self.flash_message = None
+
+            else:
+                progress = elapsed / self.flash_duration
+
+                # Fade from fully visible to transparent
+                alpha = int(255 * (1 - progress))
+
+                flash_font = pygame.font.SysFont(
+                    "Arial", max(36, int(size * 0.09)), bold=True
+                )
+
+                flash_surface = flash_font.render(
+                    self.flash_message, True, self.flash_color
+                )
+
+                flash_surface.set_alpha(alpha)
+
+                flash_rect = flash_surface.get_rect(
+                    center=(width // 2, height // 2)
+                )
+
+                screen.blit(flash_surface, flash_rect)
+            
+    def flash_text(self, message, color=(255, 255, 255), duration=1500):
+        """Display temporary text in the centre of the screen."""
+        self.flash_message = message
+        self.flash_color = color
+        self.flash_duration = duration
+        self.flash_start = pygame.time.get_ticks()
+        
     def handle_event(self, event):
         """Handle keyboard input during a human player's turn."""
 

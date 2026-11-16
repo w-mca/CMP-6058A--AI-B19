@@ -53,10 +53,10 @@ class GameSceneGUI:
         # Get current player's agent and strategy
         if game.current_player == 0:
             agent = game.agentA
-            strategy = getattr(game, "strategyA", None)
+            strategy = game.agentA.strategy
         else:
             agent = game.agentB
-            strategy = getattr(game, "strategyB", None)
+            strategy = game.agentB.strategy
 
         # Draw strategy badge for AI players only
         if agent is not None and strategy is not None:
@@ -294,6 +294,10 @@ class GameSceneGUI:
         agent = game.agentA if game.current_player == 0 else game.agentB
 
         if agent is not None:
+            if(agent.moving):
+                return
+            agent.moving = True             
+            game.handle_move(agent.next_move(game.board)[0])
             return
 
         if event.type == pygame.KEYDOWN:

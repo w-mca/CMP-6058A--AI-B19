@@ -14,6 +14,8 @@ class Agent:
         """Initialise the agent with its name and supported strategies."""
         self.name = name
         self.modes = ["minimax","alphabeta","mcts"]
+        self.moving = False
+        self.strategy = None
 
     def __str__(self):
         return f"Agent {self.name} (modes: {', '.join(self.modes)})"
@@ -24,18 +26,18 @@ class Agent:
     def simulate_move(self, board, letter):
         return board.simulate_move(board, letter)
 
-    def next_move(self, state, mode="alphabeta"):
+    def next_move(self, state):
         """Return a move using the chosen strategy."""
 
         # No counters means no move is possible.
         if not any(1 in row for row in state.grid):
             return None
 
-        if mode == "minimax":
+        if self.strategy == "minimax":
             return self.minimax_move(state)
-        elif mode == "alphabeta":
+        elif self.strategy == "alphabeta":
             return self.alphabeta_move(state)
-        elif mode == "mcts":
+        elif self.strategy == "mcts":
             return self.mcts_move(state)   
         else:
             raise ValueError("Unknown playing mode")
@@ -50,7 +52,7 @@ class Agent:
         best_move = None
 
         for letter in self.get_valid_moves(state):
-            new_state, points = self.simulate_move(state, letter)
+            new_state, points, was_hinger = self.simulate_move(state, letter)
 
             # The opponent plays next, so is_maximizing is False.
             score = self.minimax(
@@ -63,8 +65,9 @@ class Agent:
             if score > best_score:
                 best_score = score
                 best_move = letter
+                best_was_hinger = was_hinger
 
-        return best_move
+        return best_move, best_was_hinger
     
     def minimax(self, state, is_maximizing, depth, score_difference):
         """Evaluate future moves from this agent's perspective."""
@@ -77,7 +80,7 @@ class Agent:
             best_score = float("-inf")
 
             for letter in moves:
-                new_state, points = self.simulate_move(state, letter)
+                new_state, points, was_hinger = self.simulate_move(state, letter)
 
                 score = self.minimax(
                     new_state,
@@ -94,7 +97,7 @@ class Agent:
             best_score = float("inf")
 
             for letter in moves:
-                new_state, points = self.simulate_move(state, letter)
+                new_state, points, was_hinger = self.simulate_move(state, letter)
 
                 score = self.minimax(
                     new_state,
@@ -119,7 +122,7 @@ class Agent:
         beta = float("inf")
 
         for letter in self.get_valid_moves(state):
-            new_state, points = self.simulate_move(state, letter)
+            new_state, points, was_hinger = self.simulate_move(state, letter)
 
             score = self.alphabeta(
                 new_state,
@@ -133,10 +136,11 @@ class Agent:
             if score > best_score:
                 best_score = score
                 best_move = letter
+                best_was_hinger = was_hinger
 
             alpha = max(alpha, best_score)
 
-        return best_move
+        return best_move, best_was_hinger
     
     def alphabeta(self, state, is_maximizing, depth,
                   score_difference, alpha, beta):
@@ -150,7 +154,7 @@ class Agent:
             best_score = float("-inf")
 
             for letter in moves:
-                new_state, points = self.simulate_move(state, letter)
+                new_state, points, was_hinger = self.simulate_move(state, letter)
 
                 score = self.alphabeta(
                     new_state,
@@ -173,7 +177,7 @@ class Agent:
             best_score = float("inf")
 
             for letter in moves:
-                new_state, points = self.simulate_move(state, letter)
+                new_state, points, was_hinger = self.simulate_move(state, letter)
 
                 score = self.alphabeta(
                     new_state,
@@ -247,7 +251,7 @@ class Agent:
 
                 child = max(node["children"], key=uct)
 
-                new_state, points = self.simulate_move(
+                new_state, points, was_hinger = self.simulate_move(
                     node["state"], child["letter"]
                     )
 
@@ -265,7 +269,7 @@ class Agent:
                 letter = rng.choice(node["untried"])
                 node["untried"].remove(letter)
 
-                new_state, points = self.simulate_move(
+                new_state, points, was_hinger = self.simulate_move(
                     node["state"], letter
                     )
 
@@ -293,7 +297,7 @@ class Agent:
             while moves:
                 letter = rng.choice(moves)
 
-                rollout_state, points = self.simulate_move(
+                rollout_state, points, was_hinger = self.simulate_move(
                     rollout_state, letter
                     )
 
@@ -318,107 +322,162 @@ class Agent:
             root["children"],
             key=lambda child: child["visits"]
             )
+        
+        best_move = best_child["letter"]
+        # Check whether the chosen move is a hinger on the original board.
+        _, _, was_hinger = self.simulate_move(board, best_move)
+        
+        return best_child["letter"], was_hinger
 
-        return best_child["letter"]
 
 def tester():
-    """Demonstrate and validate the agent on small, known boards."""
+    """Test Minimax, Alpha-Beta and MCTS agents."""
     agent = Agent()
+
     assert agent.name == "B19"
     assert agent.modes == ["minimax", "alphabeta", "mcts"]
     assert "B19" in str(agent)
-    assert Agent("Test player").name == "Test player"
     print(agent)
 
-    empty_grid = [[0 for col in range(5)] for row in range(5)]
+    # 1. EMPTY BOARD
+    empty_grid = [[0] * 5 for _ in range(5)]
     empty = state.State(empty_grid)
-    for mode in agent.modes:
-        assert agent.next_move(empty, mode) is None
-    assert agent.get_valid_moves(empty) == []
-    print("PASS: every mode returns None on an empty board")
 
+    for mode in agent.modes:
+        agent.strategy = mode
+        assert agent.next_move(empty) is None
+
+    assert agent.get_valid_moves(empty) == []
+    print("PASS: Empty board")
+
+    # 2. SINGLE AVAILABLE MOVE
     single_grid = [row[:] for row in empty_grid]
     single_grid[4][4] = 1
     single = state.State(single_grid)
-    for mode in agent.modes:
-        assert agent.next_move(single, mode) == "Y"
-        assert single.grid == single_grid
-    print("PASS: every mode chooses the only available move, Y")
 
-    # K-L-M is a horizontal chain. L is its only hinger.
+    for mode in agent.modes:
+        agent.strategy = mode
+        letter, was_hinger = agent.next_move(single)
+        assert letter == "Y"
+        assert isinstance(was_hinger, bool)
+        assert single.grid == single_grid
+
+    print("PASS: Single available move")
+
+    # 3. SIMULATE MOVE
     chain_grid = [row[:] for row in empty_grid]
     chain_grid[2][0:3] = [1, 1, 1]
     chain = state.State(chain_grid)
+
     assert agent.get_valid_moves(chain) == ["K", "L", "M"]
 
-    after, points = agent.simulate_move(chain, "L")
-    assert points == 98, "Hinger bonus 100 minus two neighbours"
+    after, points, was_hinger = agent.simulate_move(chain, "L")
+
+    assert points == 98
+    assert was_hinger is True
     assert after.grid[2][1] == 0
     assert after.numRegions() == 2
     assert chain.grid == chain_grid
 
-    after, points = agent.simulate_move(chain, "K")
-    assert points == -1, "End counter costs one and earns no bonus"
+    after, points, was_hinger = agent.simulate_move(chain, "K")
+
+    assert points == -1
+    assert was_hinger is False
     assert after.grid[2][0] == 0
     assert chain.grid == chain_grid
-    print("PASS: simulated moves calculate costs and bonuses without changing input")
 
+    print("PASS: Move simulation and hinger detection")
+
+    # 4. MINIMAX AND ALPHA-BETA
     for depth in (1, 2, 3):
-        assert agent.minimax_move(chain, depth) == "L"
-        assert agent.alphabeta_move(chain, depth) == "L"
+        assert agent.minimax_move(chain, depth) == ("L", True)
+        assert agent.alphabeta_move(chain, depth) == ("L", True)
 
-    # Full search: taking L gains 98, and the remaining isolated moves cost zero.
     mm_score = agent.minimax(chain, True, 3, 0)
-    ab_score = agent.alphabeta(chain, True, 3, 0,
-                               float("-inf"), float("inf"))
-    assert mm_score == ab_score == 98
-    print("PASS: minimax and alpha-beta choose the hinger and agree on its value")
 
-    # Both searches should agree across several board shapes and depths.
+    ab_score = agent.alphabeta(
+        chain, True, 3, 0,
+        float("-inf"), float("inf")
+    )
+
+    assert mm_score == ab_score == 98
+
+    print("PASS: Minimax and Alpha-Beta choose the hinger")
+
+    # 5. COMPARE MINIMAX AND ALPHA-BETA
     corner_grid = [row[:] for row in empty_grid]
+
     for row, col in [(0, 0), (0, 4), (4, 0), (4, 4)]:
         corner_grid[row][col] = 1
 
     diagonal_grid = [row[:] for row in empty_grid]
+
     for row, col in [(0, 0), (1, 1), (2, 2), (3, 3)]:
         diagonal_grid[row][col] = 1
 
     for grid in [chain_grid, corner_grid, diagonal_grid]:
         board = state.State(grid)
+
         for depth in (1, 2, 3, 4):
-            assert agent.minimax_move(board, depth) == agent.alphabeta_move(board, depth)
+            assert (
+                agent.minimax_move(board, depth)
+                == agent.alphabeta_move(board, depth)
+            )
+
             for maximizing in (True, False):
                 mm = agent.minimax(board, maximizing, depth, 7)
-                ab = agent.alphabeta(board, maximizing, depth, 7,
-                                     float("-inf"), float("inf"))
-                assert mm == ab
-        assert board.grid == grid
-    print("PASS: minimax and alpha-beta agree across boards, depths and turns")
 
-    # MCTS is random: a seed makes this demonstration repeatable.
+                ab = agent.alphabeta(
+                    board, maximizing, depth, 7,
+                    float("-inf"), float("inf")
+                )
+
+                assert mm == ab
+
+        assert board.grid == grid
+
+    print("PASS: Minimax and Alpha-Beta agree")
+
+    # 6. MCTS
     first = agent.mcts_move(chain, iterations=300, seed=2026)
     second = agent.mcts_move(chain, iterations=300, seed=2026)
-    assert first == second
-    assert first in agent.get_valid_moves(chain)
-    assert first == "L", "Seeded MCTS should find this simple hinger"
-    assert chain.grid == chain_grid
-    print("PASS: seeded MCTS is repeatable and finds the hinger")
 
-    # Check the public dispatcher and its default strategy.
+    assert first == second
+    assert first[0] in agent.get_valid_moves(chain)
+    assert first == ("L", True)
+    assert chain.grid == chain_grid
+
+    print("PASS: MCTS is repeatable and finds the hinger")
+
+    # 7. NEXT_MOVE DISPATCHER
     for mode in agent.modes:
-        letter = agent.next_move(chain, mode)
+        agent.strategy = mode
+
+        result = agent.next_move(chain)
+        letter, was_hinger = result
+
         assert letter in agent.get_valid_moves(chain)
+
+        _, _, expected_hinger = agent.simulate_move(chain, letter)
+
+        assert was_hinger == expected_hinger
         assert chain.grid == chain_grid
-        print(f"Mode {mode}: chose {letter}")
-    assert agent.next_move(chain) == agent.alphabeta_move(chain)
+
+        print(f"PASS: {mode} chose {letter}, hinger={was_hinger}")
+
+    # 8. UNKNOWN STRATEGY
+    agent.strategy = "unknown"
 
     try:
-        agent.next_move(chain, "unknown")
+        agent.next_move(chain)
     except ValueError:
         pass
     else:
-        raise AssertionError("Unknown mode should raise ValueError")
+        raise AssertionError("Unknown strategy should raise ValueError")
 
+    print("PASS: Unknown strategy rejected")
+
+    # 9. INVALID SEARCH DEPTH
     for search in [agent.minimax_move, agent.alphabeta_move]:
         try:
             search(chain, depth=0)
@@ -427,6 +486,9 @@ def tester():
         else:
             raise AssertionError("Depth zero should be rejected")
 
+    print("PASS: Invalid search depth rejected")
+
+    # 10. INVALID MCTS ITERATIONS
     try:
         agent.mcts_move(chain, iterations=0)
     except ValueError:
@@ -434,7 +496,14 @@ def tester():
     else:
         raise AssertionError("Zero iterations should be rejected")
 
-    print("All agent tests passed.")
+    print("PASS: Invalid MCTS iterations rejected")
+
+    print("\nALL AGENT TESTS PASSED!")
+
+
+if __name__ == "__main__":
+    tester()
+
     
 if __name__ == "__main__":
     tester()

@@ -154,9 +154,11 @@ class StrategySceneGUI:
         if not self.gui.game.versus:
             if self.agent_a_strategy is None:
                 return
+            else:
+                self.gui.game.agentA.strategy = self.agent_a_strategy
 
         # Store strategies in the game controller.
-        self.gui.game.strategyA = self.agent_a_strategy
-        self.gui.game.strategyB = self.agent_b_strategy
+
+        self.gui.game.agentB.strategy = self.agent_b_strategy
         
         self.gui.game.begin()

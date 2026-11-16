@@ -135,6 +135,14 @@ class HingerGame:
     def handle_move(self, letter):
 
         letter = letter.upper()
+        
+        if(letter == "Z"):
+            self.ui.game_gui.flash_text(
+                "FORFEIT",
+                self.ui.game_gui.invalid_move_flash_colour
+            ) 
+            self.end_game(1 - self.current_player)
+            return
 
         # Check whether the cell exists
         if letter < "A" or letter > "Y":
@@ -207,6 +215,11 @@ class HingerGame:
             """Switch between Player A and Player B."""
             # Record the current player's time
             self.finish_turn()
+            
+            # Check if any hingers remain, if not end game?!
+            #if(self.board.numHingers(self) < 1):
+                #return
+                
             # Switch player
             self.current_player = 1 - self.current_player
             # Start the new player's timer

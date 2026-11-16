@@ -14,6 +14,7 @@ from home_scene_gui import HomeSceneGUI
 from numplayers_scene_gui import NumPlayersSceneGUI
 from strategy_scene_gui import StrategySceneGUI
 from game_scene_gui import GameSceneGUI
+from move_history_gui import MoveHistoryGUI
 
 # GUI Colours
 BACKGROUND = (17, 24, 39)
@@ -35,6 +36,7 @@ class HingerGUI:
         self.numplayers_gui = NumPlayersSceneGUI(self)
         self.strategy_gui = StrategySceneGUI(self)
         self.game_gui = GameSceneGUI(self)
+        self.move_history_gui = MoveHistoryGUI(self)
 
         # Initial window dimensions
         self.width = 700

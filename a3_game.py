@@ -25,6 +25,7 @@ class HingerGame:
         self.scores = [100, 100]
         
         self.turn_time_limit = 10.0 #20
+        self.timer_paused_at = None
         self.turn_started_at = None
         self.total_time_used = [0.0, 0.0]
         
@@ -87,14 +88,18 @@ class HingerGame:
 
     def start_turn(self):
         """Start the current player's 60-second timer."""
+        self.timer_paused_at = None
         self.turn_started_at = time.monotonic()
 
-
+    
     def get_turn_time_used(self):
         """Return seconds elapsed during the current turn."""
         if self.turn_started_at is None:
             return 0.0
-
+    
+        if self.timer_paused_at is not None:
+            return self.timer_paused_at - self.turn_started_at
+    
         return time.monotonic() - self.turn_started_at
 
 
@@ -103,6 +108,22 @@ class HingerGame:
         remaining = self.turn_time_limit - self.get_turn_time_used()
 
         return max(0.0, remaining)
+    
+    def pause_timer(self):
+        """Pause the current turn timer."""
+        if self.playing and self.turn_started_at is not None:
+            if self.timer_paused_at is None:
+                self.timer_paused_at = time.monotonic()
+
+
+    def resume_timer(self):
+        """Resume the current turn timer."""
+        if self.timer_paused_at is not None:
+            if self.turn_started_at is not None:
+                paused_duration = time.monotonic() - self.timer_paused_at
+                self.turn_started_at += paused_duration
+    
+            self.timer_paused_at = None
 
 
     def finish_turn(self):
@@ -124,10 +145,13 @@ class HingerGame:
 
     def update_timer(self):
         """Check whether the current player's time has expired."""
-
+    
         if not self.playing or self.turn_started_at is None:
             return
-
+    
+        if self.timer_paused_at is not None:
+            return
+    
         if self.get_remaining_time() <= 0:
             self.next_turn()
 

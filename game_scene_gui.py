@@ -50,13 +50,11 @@ class GameSceneGUI:
         # Current player
         player_name = "Player A" if game.current_player == 0 else "Player B"
         
-        # Get current player's agent and strategy
-        if game.current_player == 0:
-            agent = game.agentA
-            strategy = game.agentA.strategy
-        else:
-            agent = game.agentB
-            strategy = game.agentB.strategy
+        # Get current player's agent
+        agent = game.agentA if game.current_player == 0 else game.agentB
+
+        # Get strategy (None if human)
+        strategy = agent.strategy if agent is not None else "Human"
 
         # Draw strategy badge for AI players only
         if agent is not None and strategy is not None:

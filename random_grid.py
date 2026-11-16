@@ -9,25 +9,29 @@ Random grid generator to initialise state
 
 
 import random
+from a1_state import State
 
 GRID_SIZE = 5
 
 
 def generate_grid():
-    """Generate a random 5x5 grid containing 0s and 1s."""
+    """Generate a random 5x5 grid containing at least 3 hingers."""
 
-    grid = [
-        [random.randint(0, 1) for _ in range(GRID_SIZE)]
-        for _ in range(GRID_SIZE)
-    ]
+    while True:
 
-    # Ensure the board is not completely empty.
-    if not any(cell == 1 for row in grid for cell in row):
-        row = random.randrange(GRID_SIZE)
-        col = random.randrange(GRID_SIZE)
-        grid[row][col] = 1
+        # Generate a random board
+        grid = [
+            [random.randint(0, 1) for _ in range(GRID_SIZE)]
+            for _ in range(GRID_SIZE)
+        ]
 
-    return grid
+        # Count the hingers on the board
+        state = State(grid)
+        hingers = state.numHingers()
+
+        # Only accept boards containing at least 3 hingers
+        if hingers >= 3:
+            return grid
 
 
 def tester():
@@ -57,6 +61,9 @@ def tester():
             for row in grid
             for cell in row
         )
+        
+        # Every generated board must contain at least 3 hingers
+        assert State(grid).numHingers() >= 3
 
         generated.append(tuple(tuple(row) for row in grid))
 

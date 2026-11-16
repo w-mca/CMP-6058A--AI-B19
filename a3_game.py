@@ -8,6 +8,7 @@ from hinger_gui import HingerGUI
 from scene_manager import Scene
 from a1_state import State
 from a2_agent import Agent
+import random
 import random_grid
 
 
@@ -63,7 +64,8 @@ class HingerGame:
         self.scores = [100, 100]
         self.total_time_used = [0.0, 0.0]
 
-        self.current_player = 0
+        # Randomly select which player starts
+        self.current_player = random.randint(0, 1)
 
         self.move_count = 0
         self.move_history = []
@@ -77,6 +79,7 @@ class HingerGame:
             
     def play(self, state, agentA=None, agentB=None):
         """Start gameplay."""
+        self.initial_state = State(random_grid.generate_grid())
         self.board = State(state.grid)
         self.agentA = agentA
         self.agentB = agentB

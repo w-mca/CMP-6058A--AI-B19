@@ -113,6 +113,13 @@ class HingerGame:
         self.total_time_used[self.current_player] += elapsed
 
         self.turn_started_at = None
+        
+        # Reset the current AI agent's moving state
+        agent = self.agentA if self.current_player == 0 else self.agentB
+
+        if agent is not None:
+            agent.moving = False
+
 
 
     def update_timer(self):

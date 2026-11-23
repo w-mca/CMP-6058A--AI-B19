@@ -358,13 +358,10 @@ class GameSceneGUI:
         agent = game.agentA if game.current_player == 0 else game.agentB
     
         if agent is not None:
-            if agent.moving:
-                return
-    
-            agent.moving = True
-            game.handle_move(agent.next_move(game.board)[0])
             return
-    
+
+
+            
         if event.type == pygame.KEYDOWN:
     
             # Only accept A-Z

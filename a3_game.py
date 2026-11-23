@@ -30,6 +30,9 @@ class HingerGame:
         self.turn_started_at = None
         self.total_time_used = [0.0, 0.0]
         
+        self.pending_ai_move = None
+        self.pending_ai_player = None
+        
         self.current_player = 0 #0 = player A, 1  = player B
 
         self.playing = False
@@ -70,6 +73,10 @@ class HingerGame:
         self.move_count = 0
         self.move_history = []
         self.last_move = None
+        
+        # Reset any pending AI move
+        self.pending_ai_move = None
+        self.pending_ai_player = None
 
         self.playing = False
         self.game_over = False
@@ -93,6 +100,14 @@ class HingerGame:
         """Start the current player's 60-second timer."""
         self.timer_paused_at = None
         self.turn_started_at = time.monotonic()
+        
+        self.pending_ai_move = None
+        self.pending_ai_player = None
+        
+        agent = self.agentA if self.current_player == 0 else self.agentB
+        if agent is not None:
+            agent.moving = False
+            agent.waiting = False
 
     
     def get_turn_time_used(self):
@@ -153,10 +168,27 @@ class HingerGame:
             return
     
         if self.timer_paused_at is not None:
-            return
-    
+            return 
+ 
         if self.get_remaining_time() <= 0:
             self.next_turn()
+            return
+        
+        agent = self.agentA if self.current_player == 0 else self.agentB
+        if agent is None:
+            return
+        if self.get_turn_time_used() < self.turn_time_limit * 0.2:
+            agent.waiting = True
+            return
+        agent.waiting = False
+        
+        if not agent.moving:
+            agent.moving = True
+            result = agent.next_move(self.board)
+            if result is None:
+                agent.moving = False
+                return
+            self.handle_move(result[0])
 
     def end_game(self, winner=None):
             """Finish the game and determine the winner."""

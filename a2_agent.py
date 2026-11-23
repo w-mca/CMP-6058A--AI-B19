@@ -15,6 +15,8 @@ class Agent:
         self.name = name
         self.modes = ["minimax","alphabeta","mcts"]
         self.moving = False
+        self.waiting = False
+        self.wait_until = None
         self.strategy = None
 
     def __str__(self):

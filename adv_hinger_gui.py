@@ -13,7 +13,7 @@ from scene_manager import Scene, SceneManager
 from home_scene_gui import HomeSceneGUI
 from numplayers_scene_gui import NumPlayersSceneGUI
 from strategy_scene_gui import StrategySceneGUI
-from game_scene_gui import GameSceneGUI
+from adv_game_scene_gui import GameSceneGUI
 from move_history_gui import MoveHistoryGUI
 from camera_feed_gui import CameraFeedGUI
 

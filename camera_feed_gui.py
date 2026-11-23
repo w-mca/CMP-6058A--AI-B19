@@ -7,7 +7,7 @@
 # Student IDs: 100436949, McAlister, William
 import cv2
 import pygame
-
+from gesture_input import GestureInput
 
 class CameraFeedGUI:
 
@@ -15,6 +15,7 @@ class CameraFeedGUI:
         """Initialise the live camera feed."""
         self.gui = gui
         self.camera = None
+        self.gesture_input = GestureInput()
 
     def start(self):
         """Open the webcam."""
@@ -23,13 +24,18 @@ class CameraFeedGUI:
 
             if not self.camera.isOpened():
                 self.camera.release()
-                self.camera = None
-
+                self.camera = None   
+                
     def stop(self):
         """Release the webcam."""
         if self.camera is not None:
             self.camera.release()
             self.camera = None
+
+    def close(self):
+        """Release camera and hand-tracking resources."""
+        self.stop()
+        self.gesture_input.close()   
 
     def draw(self):
         """Draw a square live camera feed."""
@@ -43,6 +49,12 @@ class CameraFeedGUI:
 
         if not success:
             return
+
+        # Mirror the camera image
+        frame = cv2.flip(frame, 1)
+        
+        # Detect and draw hand landmarks
+        frame = self.gesture_input.process(frame)
 
         # Convert OpenCV BGR image to RGB
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

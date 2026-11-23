@@ -25,7 +25,9 @@ class HingerGame:
         
         self.scores = [100, 100]
         
-        self.turn_time_limit = 10.0 #20
+        self.turn_time_limit = 10.0 
+        self.picture_poll_time = 0.2 #how often it takes snapshots
+        self.last_picture_time = None
         self.timer_paused_at = None
         self.turn_started_at = None
         self.total_time_used = [0.0, 0.0]
@@ -66,6 +68,8 @@ class HingerGame:
 
         self.scores = [100, 100]
         self.total_time_used = [0.0, 0.0]
+        
+        self.last_picture_time = None
 
         # Randomly select which player starts
         self.current_player = random.randint(0, 1)
@@ -103,6 +107,8 @@ class HingerGame:
         
         self.pending_ai_move = None
         self.pending_ai_player = None
+        
+        self.last_picture_time = None
         
         agent = self.agentA if self.current_player == 0 else self.agentB
         if agent is not None:
@@ -175,20 +181,34 @@ class HingerGame:
             return
         
         agent = self.agentA if self.current_player == 0 else self.agentB
-        if agent is None:
-            return
-        if self.get_turn_time_used() < self.turn_time_limit * 0.2:
-            agent.waiting = True
-            return
-        agent.waiting = False
         
-        if not agent.moving:
-            agent.moving = True
-            result = agent.next_move(self.board)
-            if result is None:
-                agent.moving = False
+        if agent is None:
+            # Intermittent camera capture
+            current_time = self.get_turn_time_used()
+    
+            if (
+                self.last_picture_time is None
+                or current_time - self.last_picture_time >= self.picture_poll_time
+            ):
+                self.last_picture_time = current_time
+                print("picture")
+    
+            return
+
+        
+        if agent is not None:
+            if self.get_turn_time_used() < self.turn_time_limit * 0.2:
+                agent.waiting = True
                 return
-            self.handle_move(result[0])
+            agent.waiting = False
+            
+            if not agent.moving:
+                agent.moving = True
+                result = agent.next_move(self.board)
+                if result is None:
+                    agent.moving = False
+                    return
+                self.handle_move(result[0])
 
     def end_game(self, winner=None):
             """Finish the game and determine the winner."""
